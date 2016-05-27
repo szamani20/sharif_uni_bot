@@ -63,9 +63,9 @@ events = [] # should be replaced by a database!
 current_event = Event()
 
 
-class YourBot(telepot.Bot):
+class SharifUniBot(telepot.Bot):
     def __init__(self, *args, **kwargs):
-        super(YourBot, self).__init__(*args, **kwargs)
+        super(SharifUniBot, self).__init__(*args, **kwargs)
         self._answerer = telepot.helper.Answerer(self)
 
     def handle(self, msg):
@@ -122,7 +122,7 @@ class YourBot(telepot.Bot):
 
 TOKEN = 'shame_on_you!'
 
-bot = YourBot(TOKEN)
+bot = SharifUniBot(TOKEN)
 bot.message_loop()
 print('Listening ...')
 
