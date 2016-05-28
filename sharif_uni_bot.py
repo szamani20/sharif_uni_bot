@@ -1,5 +1,22 @@
 import time
 import telepot
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import create_engine, Column, Integer, String
+from sqlalchemy.orm import sessionmaker
+
+################ the code does not compile! #############################
+####################################################################
+# we need to do something for current_event
+# if we update a global current_event instance for each event
+# then the database will overwrite the previous entry
+# and we lost data
+# we need to tell the database that we need to insert a new entry
+# not update one!
+####################################################################
+
+
+engine = create_engine('postgresql://user:password@localhost:5432/name')
+Base = declarative_base()
 
 
 class Chat:
@@ -28,7 +45,16 @@ class TextMessage:
                ' chat:' + self.chat.dump()
 
 
-class Event:
+class Event(Base):
+    __tablename__ = 'events'
+
+    id = Column(Integer, primary_key=True)
+    event_name = Column(String(100), nullable=False)
+    event_date = Column(String(100), nullable=False)
+    event_hour = Column(String(100), nullable=True)
+    event_location = Column(String(100), nullable=True)
+    event_description = Column(String(100), nullable=True)
+
     def __init__(self, event_name=None, event_date=None, event_hour=None, event_location=None, event_description=None):
         self.event_name = event_name
         self.event_date = event_date
@@ -59,22 +85,21 @@ class Event:
                '\nevent_description:' + self.event_description
 
 
-events = [] # should be replaced by a database!
-current_event = Event()
+events = []
 
 
-class SharifUniBot(telepot.Bot):
+class YourBot(telepot.Bot):
     def __init__(self, *args, **kwargs):
-        super(SharifUniBot, self).__init__(*args, **kwargs)
+        super(YourBot, self).__init__(*args, **kwargs)
         self._answerer = telepot.helper.Answerer(self)
 
     def handle(self, msg):
         flavor = telepot.flavor(msg)
-        global current_event
         global bot
 
         print(msg)
 
+        # chat message
         if flavor == 'chat':
             content_type, chat_type, chat_id = telepot.glance(msg)
             print(content_type, chat_type, chat_id)
@@ -84,6 +109,7 @@ class SharifUniBot(telepot.Bot):
                 text_message = TextMessage(msg['text'], msg['message_id'], chat)
 
                 if text_message.text == '/get_last_event':
+                    events = session.query(Event).all()
                     if len(events) != 0:
                         bot.sendMessage(chat.id, events[len(events) - 1].dump())
 
@@ -115,16 +141,27 @@ class SharifUniBot(telepot.Bot):
 
                     if '5.' in main_message.text:
                         current_event.set_event_description(text_message.text)
-                        events.append(current_event)
+                        session.add(current_event)
+                        session.commit()
                         bot.sendMessage(chat.id, 'Congratulations, your event has been create. You can see the '
                                                  'list of events using "/get_last_event" command')
 
 
-TOKEN = 'shame_on_you!'
+if __name__ == '__main__':
+    Base.metadata.create_all(engine)
+    global session
+    Session = sessionmaker(bind=engine)
+    session = Session()
 
-bot = SharifUniBot(TOKEN)
-bot.message_loop()
-print('Listening ...')
+    TOKEN = 'shame on you!'
 
-while 1:
-    time.sleep(10)
+    bot = YourBot(TOKEN)
+    bot.message_loop()
+    print('Listening ...')
+
+    # Keep the program running.
+    while 1:
+        time.sleep(10)
+
+    print("Bye")
+    engine.dispose()
