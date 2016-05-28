@@ -4,18 +4,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine, Column, Integer, String
 from sqlalchemy.orm import sessionmaker
 
-################ the code does not compile! #############################
-####################################################################
-# we need to do something for current_event
-# if we update a global current_event instance for each event
-# then the database will overwrite the previous entry
-# and we lost data
-# we need to tell the database that we need to insert a new entry
-# not update one!
-####################################################################
-
-
-engine = create_engine('postgresql://user:password@localhost:5432/name')
+engine = create_engine('postgresql://postgres:k@localhost:5432/postgres')
 Base = declarative_base()
 
 
@@ -53,7 +42,7 @@ class Event(Base):
     event_date = Column(String(100), nullable=False)
     event_hour = Column(String(100), nullable=True)
     event_location = Column(String(100), nullable=True)
-    event_description = Column(String(100), nullable=True)
+    event_description = Column(String(1000), nullable=True)
 
     def __init__(self, event_name=None, event_date=None, event_hour=None, event_location=None, event_description=None):
         self.event_name = event_name
@@ -77,6 +66,13 @@ class Event(Base):
     def set_event_description(self, event_description):
         self.event_description = event_description
 
+    def inform(self):
+        return self.event_name + \
+               '\n' + self.event_date + \
+               '\n' + self.event_hour + \
+               '\n' + self.event_location + \
+               '\n' + self.event_description
+
     def dump(self):
         return 'event_name:' + self.event_name + \
                '\nevent_date:' + self.event_date + \
@@ -86,6 +82,7 @@ class Event(Base):
 
 
 events = []
+current_event = None
 
 
 class YourBot(telepot.Bot):
@@ -96,6 +93,7 @@ class YourBot(telepot.Bot):
     def handle(self, msg):
         flavor = telepot.flavor(msg)
         global bot
+        global current_event
 
         print(msg)
 
@@ -111,9 +109,10 @@ class YourBot(telepot.Bot):
                 if text_message.text == '/get_last_event':
                     events = session.query(Event).all()
                     if len(events) != 0:
-                        bot.sendMessage(chat.id, events[len(events) - 1].dump())
+                        bot.sendMessage(chat.id, events[len(events) - 1].inform())
 
                 if text_message.text == '/add_event':
+                    current_event = Event()
                     bot.sendMessage(chat.id, '1. Tell me the name of the event in reply to this message')
 
                 if 'reply_to_message' in msg:
@@ -142,6 +141,7 @@ class YourBot(telepot.Bot):
                     if '5.' in main_message.text:
                         current_event.set_event_description(text_message.text)
                         session.add(current_event)
+                        current_event = None
                         session.commit()
                         bot.sendMessage(chat.id, 'Congratulations, your event has been create. You can see the '
                                                  'list of events using "/get_last_event" command')
@@ -153,7 +153,7 @@ if __name__ == '__main__':
     Session = sessionmaker(bind=engine)
     session = Session()
 
-    TOKEN = 'shame on you!'
+    TOKEN = 'contact with @botfather'
 
     bot = YourBot(TOKEN)
     bot.message_loop()
