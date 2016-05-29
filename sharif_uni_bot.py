@@ -74,9 +74,9 @@ events = []
 current_event = None
 
 
-class YourBot(telepot.Bot):
+class ShariUniBot(telepot.Bot):
     def __init__(self, *args, **kwargs):
-        super(YourBot, self).__init__(*args, **kwargs)
+        super(ShariUniBot, self).__init__(*args, **kwargs)
         self._answerer = telepot.helper.Answerer(self)
 
     def handle(self, msg):
@@ -145,7 +145,7 @@ if __name__ == '__main__':
 
     TOKEN = 'contact with @botfather'
 
-    bot = YourBot(TOKEN)
+    bot = ShariUniBot(TOKEN)
     bot.message_loop()
     print('Listening ...')
 
