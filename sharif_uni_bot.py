@@ -1,7 +1,7 @@
 import time
 import telepot
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import create_engine, Column, Integer, String
+from sqlalchemy import create_engine, Column, Integer, PickleType, String
 from sqlalchemy.orm import sessionmaker
 
 engine = create_engine('postgresql://username:password@localhost:5432/database_name')
@@ -43,28 +43,16 @@ class Event(Base):
     event_hour = Column(String(100), nullable=True)
     event_location = Column(String(100), nullable=True)
     event_description = Column(String(1000), nullable=True)
+    event_chat = Column(PickleType(), nullable=False)
 
-    def __init__(self, event_name=None, event_date=None, event_hour=None, event_location=None, event_description=None):
+    def __init__(self, event_name=None, event_date=None, event_hour=None, event_location=None, event_description=None,
+                 event_chat=None):
         self.event_name = event_name
         self.event_date = event_date
         self.event_hour = event_hour
         self.event_location = event_location
         self.event_description = event_description
-
-    def set_event_name(self, event_name):
-        self.event_name = event_name
-
-    def set_event_date(self, event_date):
-        self.event_date = event_date
-
-    def set_event_hour(self, event_hour):
-        self.event_hour = event_hour
-
-    def set_event_location(self, event_location):
-        self.event_location = event_location
-
-    def set_event_description(self, event_description):
-        self.event_description = event_description
+        self.event_chat = event_chat
 
     def inform(self):
         return self.event_name + \
@@ -78,7 +66,8 @@ class Event(Base):
                '\nevent_date:' + self.event_date + \
                '\nevent_hour:' + self.event_hour + \
                '\nevent_location:' + self.event_location + \
-               '\nevent_description:' + self.event_description
+               '\nevent_description:' + self.event_description + \
+               '\nevent_chat:' + self.event_chat.dump()
 
 
 events = []
@@ -113,6 +102,7 @@ class YourBot(telepot.Bot):
 
                 if text_message.text == '/add_event':
                     current_event = Event()
+                    current_event.event_chat = chat  # we should figure out which user is which!
                     bot.sendMessage(chat.id, '1. Tell me the name of the event in reply to this message')
 
                 if 'reply_to_message' in msg:
@@ -121,25 +111,25 @@ class YourBot(telepot.Bot):
                                                main_chat)
 
                     if '1.' in main_message.text:
-                        current_event.set_event_name(text_message.text)
+                        current_event.event_name = text_message.text
                         bot.sendMessage(chat.id, '2. Tell me the date of the event in reply to this message')
 
                     if '2.' in main_message.text:
-                        current_event.set_event_date(text_message.text)
+                        current_event.event_date = text_message.text
                         bot.sendMessage(chat.id, '3. Tell me the hour of the event in reply to this message')
 
                     if '3.' in main_message.text:
-                        current_event.set_event_hour(text_message.text)
+                        current_event.event_hour = text_message.text
                         bot.sendMessage(chat.id, '4. Tell me the location of the event in reply to this message')
 
                     if '4.' in main_message.text:
-                        current_event.set_event_location(text_message.text)
+                        current_event.event_location = text_message.text
                         bot.sendMessage(chat.id,
                                         '5. Tell me the description (any links maybe)'
                                         ' of the event in reply to this message')
 
                     if '5.' in main_message.text:
-                        current_event.set_event_description(text_message.text)
+                        current_event.event_description = text_message.text
                         session.add(current_event)
                         current_event = None
                         session.commit()
