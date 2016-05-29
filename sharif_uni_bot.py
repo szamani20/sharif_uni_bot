@@ -71,7 +71,6 @@ class Event(Base):
 
 
 events = []
-current_event = None
 
 
 class ShariUniBot(telepot.Bot):
@@ -82,7 +81,7 @@ class ShariUniBot(telepot.Bot):
     def handle(self, msg):
         flavor = telepot.flavor(msg)
         global bot
-        global current_event
+        global events
 
         print(msg)
 
@@ -96,13 +95,12 @@ class ShariUniBot(telepot.Bot):
                 text_message = TextMessage(msg['text'], msg['message_id'], chat)
 
                 if text_message.text == '/get_last_event':
-                    events = session.query(Event).all()
-                    if len(events) != 0:
-                        bot.sendMessage(chat.id, events[len(events) - 1].inform())
+                    all_events = session.query(Event).all()
+                    if len(all_events) != 0:
+                        bot.sendMessage(chat.id, all_events[len(all_events) - 1].inform())
 
                 if text_message.text == '/add_event':
-                    current_event = Event()
-                    current_event.event_chat = chat  # we should figure out which user is which!
+                    events.append(Event(event_chat=chat))
                     bot.sendMessage(chat.id, '1. Tell me the name of the event in reply to this message')
 
                 if 'reply_to_message' in msg:
@@ -111,28 +109,43 @@ class ShariUniBot(telepot.Bot):
                                                main_chat)
 
                     if '1.' in main_message.text:
-                        current_event.event_name = text_message.text
+                        for e in events:
+                            if e.event_chat.id == chat.id:
+                                e.event_name = text_message.text
+                                break
                         bot.sendMessage(chat.id, '2. Tell me the date of the event in reply to this message')
 
                     if '2.' in main_message.text:
-                        current_event.event_date = text_message.text
+                        for e in events:
+                            if e.event_chat.id == chat.id:
+                                e.event_date = text_message.text
+                                break
                         bot.sendMessage(chat.id, '3. Tell me the hour of the event in reply to this message')
 
                     if '3.' in main_message.text:
-                        current_event.event_hour = text_message.text
+                        for e in events:
+                            if e.event_chat.id == chat.id:
+                                e.event_hour = text_message.text
+                                break
                         bot.sendMessage(chat.id, '4. Tell me the location of the event in reply to this message')
 
                     if '4.' in main_message.text:
-                        current_event.event_location = text_message.text
+                        for e in events:
+                            if e.event_chat.id == chat.id:
+                                e.event_location = text_message.text
+                                break
                         bot.sendMessage(chat.id,
                                         '5. Tell me the description (any links maybe)'
                                         ' of the event in reply to this message')
 
                     if '5.' in main_message.text:
-                        current_event.event_description = text_message.text
-                        session.add(current_event)
-                        current_event = None
-                        session.commit()
+                        for e in events:
+                            if e.event_chat.id == chat.id:
+                                e.event_description = text_message.text
+                                session.add(e)
+                                session.commit()
+                                events.remove(e)
+                                break
                         bot.sendMessage(chat.id, 'Congratulations, your event has been create. You can see the '
                                                  'list of events using "/get_last_event" command')
 
