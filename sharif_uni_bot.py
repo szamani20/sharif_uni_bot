@@ -158,7 +158,7 @@ if __name__ == '__main__':
     Session = sessionmaker(bind=engine)
     session = Session()
 
-    TOKEN = '224588533:AAEMnp0ecWWAze_1oVzJ3gUFwZEK6LDcqgM'
+    TOKEN = 'contact with @botfather'
 
     bot = ShariUniBot(TOKEN)
     bot.message_loop()
