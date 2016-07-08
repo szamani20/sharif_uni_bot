@@ -1,8 +1,10 @@
 import time
 import telepot
+import os
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine, Column, Integer, PickleType, String
 from sqlalchemy.orm import sessionmaker
+from telepot.namedtuple import ForceReply
 
 engine = create_engine('postgresql://username:password@localhost:5432/database_name')
 Base = declarative_base()
@@ -83,12 +85,12 @@ class ShariUniBot(telepot.Bot):
         global bot
         global events
 
-        print(msg)
+        # print(msg)
 
         # chat message
         if flavor == 'chat':
             content_type, chat_type, chat_id = telepot.glance(msg)
-            print(content_type, chat_type, chat_id)
+            # print(content_type, chat_type, chat_id)
 
             if content_type == 'text':
                 chat = Chat(**msg['from'])
@@ -101,7 +103,7 @@ class ShariUniBot(telepot.Bot):
 
                 if text_message.text == '/add_event':
                     events.append(Event(event_chat=chat))
-                    bot.sendMessage(chat.id, '1. Tell me the name of the event in reply to this message')
+                    bot.sendMessage(chat.id, '1. Tell me the name of the event in reply to this message', reply_markup=ForceReply())
 
                 if 'reply_to_message' in msg:
                     main_chat = Chat(**msg['reply_to_message']['from'])
@@ -113,21 +115,21 @@ class ShariUniBot(telepot.Bot):
                             if e.event_chat.id == chat.id:
                                 e.event_name = text_message.text
                                 break
-                        bot.sendMessage(chat.id, '2. Tell me the date of the event in reply to this message')
+                        bot.sendMessage(chat.id, '2. Tell me the date of the event in reply to this message', reply_markup=ForceReply())
 
                     if '2.' in main_message.text:
                         for e in events:
                             if e.event_chat.id == chat.id:
                                 e.event_date = text_message.text
                                 break
-                        bot.sendMessage(chat.id, '3. Tell me the hour of the event in reply to this message')
+                        bot.sendMessage(chat.id, '3. Tell me the hour of the event in reply to this message', reply_markup=ForceReply())
 
                     if '3.' in main_message.text:
                         for e in events:
                             if e.event_chat.id == chat.id:
                                 e.event_hour = text_message.text
                                 break
-                        bot.sendMessage(chat.id, '4. Tell me the location of the event in reply to this message')
+                        bot.sendMessage(chat.id, '4. Tell me the location of the event in reply to this message', reply_markup=ForceReply())
 
                     if '4.' in main_message.text:
                         for e in events:
@@ -136,7 +138,7 @@ class ShariUniBot(telepot.Bot):
                                 break
                         bot.sendMessage(chat.id,
                                         '5. Tell me the description (any links maybe)'
-                                        ' of the event in reply to this message')
+                                        ' of the event in reply to this message', reply_markup=ForceReply())
 
                     if '5.' in main_message.text:
                         for e in events:
@@ -156,15 +158,15 @@ if __name__ == '__main__':
     Session = sessionmaker(bind=engine)
     session = Session()
 
-    TOKEN = 'contact with @botfather'
+    TOKEN = '224588533:AAEMnp0ecWWAze_1oVzJ3gUFwZEK6LDcqgM'
 
     bot = ShariUniBot(TOKEN)
     bot.message_loop()
-    print('Listening ...')
+    # print('Listening ...')
 
     # Keep the program running.
     while 1:
         time.sleep(10)
 
-    print("Bye")
+    # print("Bye")
     engine.dispose()
